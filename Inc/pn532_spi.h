@@ -1,5 +1,8 @@
-#ifndef PN532_SPI_H
-#define PN532_SPI_H
+
+#ifndef __PN532_SPI_H__
+#define __PN532_SPI_H__
+
+#include "spi_functions.h"
 
 #define PN532_PREAMBLE                (0x00)
 #define PN532_STARTCODE1              (0x00)
@@ -16,23 +19,19 @@
 #define PN532_INVALID_FRAME           (-3)
 #define PN532_NO_SPACE                (-4)
 
-#define PN532_COMMAND_GETFIRMWAREVERSION    (0x02)
-#define PN532_COMMAND_SAMCONFIGURATION      (0x14)
-#define PN532_COMMAND_INDATAEXCHANGE        (0x40)
-#define PN532_COMMAND_INLISTPASSIVETARGET   (0x4A)
 
-#include <stdint.h>
 
-void begin();
-void wakeup();
+void spi_begin(SPI_TypeDef * SPIx, uint8_t ss);
+void spi_wakeup();
 int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen);
 
 int16_t readResponse(uint8_t buf[], uint8_t len, uint16_t timeout);
+
 int isReady();
 void writeFrame(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen);
 int8_t readAckFrame();
 
-void write(uint8_t data);
-uint8_t read();
+//void write(uint8_t data);
+//uint8_t read();
 
 #endif

@@ -36,7 +36,7 @@ STARTUP=startup_stm32f10x.o system_stm32f10x.o
 
 OBJS=$(STARTUP) main.o
 OBJS+=stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o stm32f10x_spi.o
-OBJS+=uart_functions.o spi_functions.o pn532_spi.o pn532.o config.o
+OBJS+=uart_functions.o spi_functions.o pn532_spi.o pn532.o pn532_emulatetag.o config.o
 
 
 FULLASSERT=-DUSE_FULL_ASSERT

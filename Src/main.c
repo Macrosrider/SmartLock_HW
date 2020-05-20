@@ -4,11 +4,20 @@
 #include <stm32f10x_usart.h>
 #include <errors.h>
 #include <uart_functions.h>
-#include <pn532.h>
+#include <pn532_emulatetag.h>
 #include <config.h>
 #include "stdio.h"
 
+////////////////////////////////////////////////////////////////////////////////////
+/*Pinout:
+ * UART: RX->PA9, TX->PA10
+ * PN532: NSS->PA4, MOSI->PA7 , MISO-> PA6, SCKL->PA5
+ */
+///////////////////////////////////////////////////////////////////////////////////
 
+
+char buffer[100];
+uint8_t uid[3] = { 0x12, 0x34, 0x56 };
 
 int main(){
 
@@ -25,16 +34,13 @@ int main(){
 
 
     uartInit();
-    char buffer[100];
-    char serial[96];
     Delay(100);
 
-    nfcBegin();
+    tag_setUid(uid);
+    tag_init();
     Delay(100);
 
-
-
-    uint32_t versiondata = getFirmwareVersion();
+    uint32_t versiondata = pn532_getFirmwareVersion();
     if(!versiondata){
         sprintf(buffer, "\rUnable to find PN53x board\n");
         uart_send(buffer);
@@ -44,58 +50,20 @@ int main(){
     sprintf(buffer, "\rFound PN532 chip!\n");
     uart_send(buffer);
 
-    if(SAMConfig() != 0){
-        sprintf(buffer, "\rUnable to setup SAMConfig\n");
-        uart_send(buffer);
-    }
-
     while(1){
-
-        int success;
-
-        uint8_t responseLength = 32;
-
-        sprintf(buffer, "\rWaiting for NFC\n");
-        uart_send(buffer);
-
-        success = inListPassiveTarget();
-
-        if(success == 0) {
-            sprintf(buffer, "\rFound NFC device\n");
-            uart_send(buffer);
-
-
-            uint8_t selectApdu[] = {0x00, /* CLA */
-                                    0xA4, /* INS */
-                                    0x04, /* P1  */
-                                    0x00, /* P2  */
-                                    0x07, /* Length of AID  */
-                                    0xF0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, /* AID defined on Android App */
-                                    0x00  /* Le  */ };
-
-            uint8_t response[32];
-
-            success = inDataExchange(selectApdu, sizeof(selectApdu), response, &responseLength);
-
-            if (success) {
-                sprintf(buffer, "\rResponse code: %2X\n", response);
-                uart_send(buffer);
-
-                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET);
-                Delay(500);
-                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
-                Delay(500);
-
-            } else {
-                sprintf(buffer, "\rFailed sending SELECT AID\n");
+        tag_emulate(0);
+        if(writeOccured()){
+            uint8_t* tag_buf;
+            uint16_t length;
+            tag_getContent(&tag_buf, &length);
+            for(int i = 0; i < length; i++) {
+                sprintf(buffer, "%2X ", tag_buf[i]);
                 uart_send(buffer);
             }
-        }else{
-            sprintf(buffer, "\rDidn't find anything\n");
+            sprintf(buffer, "\n");
             uart_send(buffer);
         }
-
-        Delay(1000);
+        Delay(100);
     }
 }
 
